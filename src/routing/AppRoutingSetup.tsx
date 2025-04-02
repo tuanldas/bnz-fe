@@ -6,6 +6,7 @@ import {AuthPage} from '@/auth';
 import {RequireAuth} from '@/auth/RequireAuth';
 import {Demo1Layout} from '@/layouts/demo1';
 import {ErrorsRouting} from '@/errors';
+import {Classes} from '@/pages/classes/Classes.tsx';
 
 const AppRoutingSetup = (): ReactElement => {
   return (
@@ -13,6 +14,7 @@ const AppRoutingSetup = (): ReactElement => {
       <Route element={<RequireAuth />}>
         <Route element={<Demo1Layout />}>
           <Route path="/" element={<DefaultPage />} />
+          <Route path="/classes" element={<Classes />} />
         </Route>
       </Route>
       <Route path="error/*" element={<ErrorsRouting />} />
