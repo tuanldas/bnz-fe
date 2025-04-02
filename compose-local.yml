@@ -1,0 +1,9 @@
+services:
+  app:
+    build:
+      target: dev
+    volumes:
+      - '/app/node_modules'
+    ports:
+      - '${DOCKER_PORT:-3000}:3000'
+    restart: on-failure
