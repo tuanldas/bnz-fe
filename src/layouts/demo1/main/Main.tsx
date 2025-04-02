@@ -57,8 +57,6 @@ const Main = () => {
         <main className="grow content pt-5" role="content">
           <Outlet />
         </main>
-
-        <Footer />
       </div>
     </Fragment>
   );
