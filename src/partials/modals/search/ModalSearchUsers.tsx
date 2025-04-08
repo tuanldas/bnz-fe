@@ -49,7 +49,7 @@ const ModalSearchUsers = ({ items, more = true }: IModalSearchUsersProps) => {
           </div>
         ))}
 
-        {/* Conditional "Go to Users" button */}
+        {/* Conditional "Go to List" button */}
         {!more && (
           <div className="menu-item px-4 pt-2">
             <a href="#" className="btn btn-sm btn-light justify-center">
