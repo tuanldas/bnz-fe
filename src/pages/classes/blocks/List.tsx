@@ -29,6 +29,15 @@ const List = ({classes}: { classes: any }) => {
                             ))
                             : null
                     }
+                    {
+                        classes && classes.length === 0 ? (
+                            <tr>
+                                <td colSpan={3} className="text-center text-muted-foreground py-6">
+                                    No data available
+                                </td>
+                            </tr>
+                        ) : null
+                    }
                     </tbody>
                 </table>
             </div>
