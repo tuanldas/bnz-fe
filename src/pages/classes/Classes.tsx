@@ -14,7 +14,6 @@ const Classes = () => {
         queryKey: ['Classes'],
         queryFn: callApiGetStudents,
     });
-    console.log(isLoading);
     return <>
         <Fragment>
             {currentLayout?.name === 'demo1-layout' && (
