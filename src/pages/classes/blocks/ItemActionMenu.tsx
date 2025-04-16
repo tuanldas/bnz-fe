@@ -1,6 +1,18 @@
 import { KeenIcon, MenuIcon, MenuItem, MenuLink, MenuSub, MenuTitle } from '@/components';
 
-const ItemActionMenu = ({ isEdit, handleEdit }: { isEdit: boolean, handleEdit: () => void }) => {
+type PropsType = {
+  isEdit: boolean,
+  handleEdit: () => void,
+  isDeleteConfirmation: boolean,
+  handleDeleteConfirmation: () => void
+}
+
+const ItemActionMenu = ({
+                          isEdit,
+                          handleEdit,
+                          isDeleteConfirmation,
+                          handleDeleteConfirmation
+                        }: PropsType) => {
   return (
     <MenuSub className="menu-default" rootClassName="w-full max-w-[200px]">
       {
@@ -8,9 +20,21 @@ const ItemActionMenu = ({ isEdit, handleEdit }: { isEdit: boolean, handleEdit: (
           ? <MenuItem onClick={() => handleEdit()}>
             <MenuLink>
               <MenuIcon>
-                <KeenIcon icon="setting-3" />
+                <KeenIcon icon="notepad-edit" />
               </MenuIcon>
-              <MenuTitle>Settings</MenuTitle>
+              <MenuTitle>Sửa</MenuTitle>
+            </MenuLink>
+          </MenuItem>
+          : null
+      }
+      {
+        isDeleteConfirmation
+          ? <MenuItem onClick={() => handleDeleteConfirmation()}>
+            <MenuLink>
+              <MenuIcon>
+                <KeenIcon icon="tablet-delete" />
+              </MenuIcon>
+              <MenuTitle>Xóa</MenuTitle>
             </MenuLink>
           </MenuItem>
           : null

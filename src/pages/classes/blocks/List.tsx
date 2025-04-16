@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/providers';
 import { ItemActionMenu } from '@/pages/classes/blocks/ItemActionMenu.tsx';
 import { Edit } from '@/pages/classes/blocks/Edit.tsx';
+import { DeleteConfirmation } from '@/pages/classes/blocks/Delete.tsx';
 
 interface IColumnFilterProps<TData, TValue> {
   column: Column<TData, TValue>;
@@ -27,7 +28,8 @@ export class IUsersData {
 
 const List = ({ classes }: { classes: any }) => {
   const { isRTL } = useLanguage();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalEditOpen, setIsModalEditOpen] = useState(false);
+  const [isModalDeleteConfirmationOpen, setIsModalDeleteConfirmationOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<IUsersData | undefined>(undefined);
 
   const ColumnInputFilter = <TData, TValue>({ column }: IColumnFilterProps<TData, TValue>) => {
@@ -46,8 +48,17 @@ const List = ({ classes }: { classes: any }) => {
     onEdit();
   };
 
+  const handleDeleteConfirmation = (rowId: IUsersData) => {
+    setEditingClass(rowId);
+    onDeleteConfirmation();
+  };
+
   const onEdit = () => {
-    return setIsModalOpen(!isModalOpen);
+    return setIsModalEditOpen(!isModalEditOpen);
+  };
+
+  const onDeleteConfirmation = () => {
+    return setIsModalDeleteConfirmationOpen(!isModalDeleteConfirmationOpen);
   };
 
   const columns = useMemo<ColumnDef<IUsersData>[]>(
@@ -111,7 +122,9 @@ const List = ({ classes }: { classes: any }) => {
               </MenuToggle>
               {ItemActionMenu({
                 isEdit: true,
-                handleEdit: () => handleEdit(row.original)
+                handleEdit: () => handleEdit(row.original),
+                isDeleteConfirmation: true,
+                handleDeleteConfirmation: () => handleDeleteConfirmation(row.original)
               })}
             </MenuItem>
           </Menu>
@@ -134,9 +147,13 @@ const List = ({ classes }: { classes: any }) => {
         sorting={[{ id: 'name', desc: false }]}
         layout={{ card: true }}
       />
-      <Edit open={isModalOpen}
+      <Edit open={isModalEditOpen}
             onOpenChange={onEdit}
             editingClass={editingClass}
+      />
+      <DeleteConfirmation open={isModalDeleteConfirmationOpen}
+                          onOpenChange={onDeleteConfirmation}
+                          classToDelete={editingClass}
       />
     </>
   );
