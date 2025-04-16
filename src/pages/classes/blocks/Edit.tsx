@@ -36,8 +36,9 @@ const Edit = ({ onOpenChange, open, editingClass }: {
   const updateMutation = useMutation({
     mutationFn: callApiUpdateClass,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['Classes'] });
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
       toast.success('Cập nhật lớp thành công!');
+      onOpenChange();
     },
     onError: (error: any) => {
       toast.error(`Cập nhật thất bại: ${error.message}`);

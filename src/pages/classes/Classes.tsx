@@ -14,7 +14,7 @@ const Classes = () => {
   const [openCreate, setOpenCreate] = useState(false);
   const { currentLayout } = useLayout();
   const { data } = useQuery({
-    queryKey: ['Classes'],
+    queryKey: ['classes'],
     queryFn: callApiGetClasses
   });
 
