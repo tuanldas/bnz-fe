@@ -9,9 +9,10 @@ import {
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import clsx from 'clsx';
-import { useState } from 'react';
-import { callApiCreateClass } from '@/api/class.tsx';
+import { callApiUpdateClass } from '@/api/class.tsx';
 import { toast } from 'sonner';
+import { IUsersData } from '@/pages/classes/blocks/List.tsx';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 
 const schema = Yup.object().shape({
@@ -21,32 +22,48 @@ const schema = Yup.object().shape({
     .required('Tên lớp là bắt buộc')
 });
 
-const initialValues = {
-  name: '',
-  description: ''
-};
-
-const Create = ({ onOpenChange, open }: {
+const Edit = ({ onOpenChange, open, editingClass }: {
   open: boolean;
   onOpenChange: () => void;
+  editingClass: IUsersData | undefined
 }) => {
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
+  const initialValues = {
+    name: editingClass ? editingClass.name ?? '' : '',
+    description: editingClass ? editingClass.description ?? '' : ''
+  };
+
+  const updateMutation = useMutation({
+    mutationFn: callApiUpdateClass,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['Classes'] });
+      toast.success('Cập nhật lớp thành công!');
+    },
+    onError: (error: any) => {
+      toast.error(`Cập nhật thất bại: ${error.message}`);
+    }
+  });
+  const isLoading = updateMutation.isPending;
 
   const formik = useFormik({
     initialValues,
     validationSchema: schema,
+    enableReinitialize: true,
     onSubmit: async (values, { setSubmitting }) => {
-      setLoading(true);
-
-      try {
-        await callApiCreateClass({ dataCreate: values });
-        onOpenChange();
-        toast.success('Tạo lớp thành công!');
-      } catch {
-        toast.error('Tạo lớp thất bại');
-        setSubmitting(false);
+      if (editingClass?.id === undefined) {
+        toast.error('Lỗi: Không tìm thấy ID lớp để cập nhật.');
+        setSubmitting(false); // Reset trạng thái submit của Formik
+        return;
       }
-      setLoading(false);
+
+      updateMutation.mutate(
+        { classId: editingClass.id, data: values },
+        {
+          onSettled: () => {
+            setSubmitting(false);
+          }
+        }
+      );
     }
   });
 
@@ -60,7 +77,7 @@ const Create = ({ onOpenChange, open }: {
           <DialogDescription></DialogDescription>
           <div className="flex items-center justify-between flex-wrap grow gap-5 pb-7.5">
             <div className="flex flex-col justify-center gap-2">
-              <h1 className="text-xl font-semibold leading-none text-gray-900">Tạo lớp</h1>
+              <h1 className="text-xl font-semibold leading-none text-gray-900">Cập nhật thông tin lớp</h1>
             </div>
             <button className="btn btn-sm btn-light" onClick={onOpenChange}>
               Close
@@ -103,7 +120,7 @@ const Create = ({ onOpenChange, open }: {
             <div className="flex justify-end pt-2.5">
               <button type={'submit'}
                       className="btn btn-primary"
-                      disabled={loading || formik.isSubmitting}
+                      disabled={isLoading || formik.isSubmitting}
               >Save Changes
               </button>
             </div>
@@ -114,4 +131,4 @@ const Create = ({ onOpenChange, open }: {
   );
 };
 
-export { Create };
+export { Edit };

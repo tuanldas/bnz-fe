@@ -1,15 +1,8 @@
 import { PropsWithChildren } from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { AuthProvider } from '@/auth/providers/JWTProvider';
-import {
-  LayoutProvider,
-  LoadersProvider,
-  MenusProvider,
-  SettingsProvider,
-  SnackbarProvider,
-  TranslationProvider
-} from '@/providers';
+import { LayoutProvider, LoadersProvider, MenusProvider, SettingsProvider, TranslationProvider } from '@/providers';
 import { HelmetProvider } from 'react-helmet-async';
 
 const queryClient = new QueryClient();

@@ -11,3 +11,14 @@ export const callApiCreateClass = ({dataCreate}: { dataCreate: { name: string, d
         }
     );
 };
+
+export const callApiUpdateClass = ({classId, data}: {
+    classId: number,
+    data: { name: string, description: string }
+}) => {
+    return new ApiCaller().setUrl(`/classes/${classId}`).put(
+        {
+            data: data,
+        }
+    );
+};
