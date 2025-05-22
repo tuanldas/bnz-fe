@@ -76,7 +76,6 @@ const Details = ({ open, onOpenChange, classData }: IDetailsProps) => {
                   </div>
                 </div>
               </div>
-
             </div>
           )}
         </DialogBody>
