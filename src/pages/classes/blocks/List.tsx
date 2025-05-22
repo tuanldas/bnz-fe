@@ -8,13 +8,14 @@ import {
   MenuItem,
   MenuToggle
 } from '@/components';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Column, ColumnDef } from '@tanstack/react-table';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/providers';
 import { ItemActionMenu } from '@/pages/classes/blocks/ItemActionMenu.tsx';
 import { Edit } from '@/pages/classes/blocks/Edit.tsx';
 import { DeleteConfirmation } from '@/pages/classes/blocks/Delete.tsx';
+import { Details } from '@/pages/classes/blocks/Details.tsx';
 
 interface IColumnFilterProps<TData, TValue> {
   column: Column<TData, TValue>;
@@ -30,7 +31,9 @@ const List = ({ classes }: { classes: any }) => {
   const { isRTL } = useLanguage();
   const [isModalEditOpen, setIsModalEditOpen] = useState(false);
   const [isModalDeleteConfirmationOpen, setIsModalDeleteConfirmationOpen] = useState(false);
+  const [isModalDetailsOpen, setIsModalDetailsOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<IUsersData | undefined>(undefined);
+  const [viewingClass, setViewingClass] = useState<IUsersData | undefined>(undefined); // State cho lớp đang xem chi tiết
 
   const ColumnInputFilter = <TData, TValue>({ column }: IColumnFilterProps<TData, TValue>) => {
     return (
@@ -60,7 +63,13 @@ const List = ({ classes }: { classes: any }) => {
   const onDeleteConfirmation = () => {
     return setIsModalDeleteConfirmationOpen(!isModalDeleteConfirmationOpen);
   };
-
+  const onDetailsModalToggle = () => {
+    return setIsModalDetailsOpen(!isModalDetailsOpen);
+  };
+  const handleViewDetails = useCallback((classData: IUsersData) => {
+    setViewingClass(classData);
+    onDetailsModalToggle();
+  }, [onDetailsModalToggle]);
   const columns = useMemo<ColumnDef<IUsersData>[]>(
     () => [
       {
@@ -124,7 +133,9 @@ const List = ({ classes }: { classes: any }) => {
                 isEdit: true,
                 handleEdit: () => handleEdit(row.original),
                 isDeleteConfirmation: true,
-                handleDeleteConfirmation: () => handleDeleteConfirmation(row.original)
+                handleDeleteConfirmation: () => handleDeleteConfirmation(row.original),
+                isViewDetails: true,
+                handleViewDetails: () => handleViewDetails(row.original)
               })}
             </MenuItem>
           </Menu>
@@ -154,6 +165,11 @@ const List = ({ classes }: { classes: any }) => {
       <DeleteConfirmation open={isModalDeleteConfirmationOpen}
                           onOpenChange={onDeleteConfirmation}
                           classToDelete={editingClass}
+      />
+      <Details
+        open={isModalDetailsOpen}
+        onOpenChange={onDetailsModalToggle}
+        classData={viewingClass}
       />
     </>
   );

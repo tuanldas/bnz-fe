@@ -5,16 +5,31 @@ type PropsType = {
   handleEdit: () => void,
   isDeleteConfirmation: boolean,
   handleDeleteConfirmation: () => void
+  isViewDetails: boolean,
+  handleViewDetails: () => void
 }
 
 const ItemActionMenu = ({
                           isEdit,
                           handleEdit,
                           isDeleteConfirmation,
-                          handleDeleteConfirmation
+                          handleDeleteConfirmation,
+                          isViewDetails,
+                          handleViewDetails
                         }: PropsType) => {
   return (
     <MenuSub className="menu-default" rootClassName="w-full max-w-[200px]">
+      {isViewDetails && handleViewDetails && (
+        <MenuItem onClick={handleViewDetails}>
+          <MenuLink>
+            <MenuIcon>
+              {/* Chọn một icon phù hợp, ví dụ: 'eye', 'file-magnifying-glass', 'information-outline' */}
+              <KeenIcon icon="eye" />
+            </MenuIcon>
+            <MenuTitle>Xem chi tiết</MenuTitle>
+          </MenuLink>
+        </MenuItem>
+      )}
       {
         isEdit
           ? <MenuItem onClick={() => handleEdit()}>
