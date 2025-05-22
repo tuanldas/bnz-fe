@@ -9,6 +9,7 @@ import { ErrorsRouting } from '@/errors';
 import { Classes } from '@/pages/classes/Classes.tsx';
 import { Students } from '@/pages/students/students.tsx';
 import { Teachers } from '@/pages/teachers/teachers.tsx';
+import { Subjects } from '@/pages/subjects/subjects.tsx';
 
 const AppRoutingSetup = (): ReactElement => {
   return (
@@ -19,6 +20,7 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/classes" element={<Classes />} />
           <Route path="/students" element={<Students />} />
           <Route path="/teachers" element={<Teachers />} />
+          <Route path="/subjects" element={<Subjects />} />
         </Route>
       </Route>
       <Route path="error/*" element={<ErrorsRouting />} />
