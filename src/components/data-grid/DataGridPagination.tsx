@@ -94,7 +94,7 @@ const DataGridPagination = () => {
       data-pagination
     >
       <div className="flex items-center space-x-2 order-2 md:order-1 pb-2 md:pb-0">
-        <div className="text-sm text-muted-foreground">Rows per page</div>
+        <div className="text-sm text-muted-foreground">Số hàng</div>
         <Select
           value={`${table.getState().pagination.pageSize}`}
           onValueChange={(value) => {

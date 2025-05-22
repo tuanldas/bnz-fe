@@ -1,49 +1,36 @@
-import { ReactElement, useEffect, useState } from 'react';
-import { useLocation } from 'react-router';
-import { useAuthContext } from '@/auth';
+import { ReactElement, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useLoaders } from '@/providers';
 import { AppRoutingSetup } from '.';
 
 const AppRouting = (): ReactElement => {
   const { setProgressBarLoader } = useLoaders();
-  const { verify, setLoading } = useAuthContext();
-  const [previousLocation, setPreviousLocation] = useState('');
-  const [firstLoad, setFirstLoad] = useState(true);
   const location = useLocation();
-  const path = location.pathname.trim();
+  const currentRouteKey = location.pathname + location.search;
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
-    if (firstLoad) {
-      verify().finally(() => {
-        setLoading(false);
-        setFirstLoad(false);
-      });
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      if (!location.hash) {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      }
+      return;
     }
-  });
 
-  useEffect(() => {
-    if (!firstLoad) {
-      setProgressBarLoader(true);
-      verify()
-        .catch(() => {
-          throw new Error('User verify request failed!');
-        })
-        .finally(() => {
-          setPreviousLocation(path);
-          setProgressBarLoader(false);
-          if (path === previousLocation) {
-            setPreviousLocation('');
-          }
-        });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location]);
+    setProgressBarLoader(true);
 
-  useEffect(() => {
-    if (!CSS.escape(window.location.hash)) {
+    if (!location.hash) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [previousLocation]);
+
+    const timer = setTimeout(() => {
+      setProgressBarLoader(false);
+    }, 300);
+
+    return () => clearTimeout(timer);
+
+  }, [currentRouteKey, location.hash, setProgressBarLoader]);
 
   return <AppRoutingSetup />;
 };

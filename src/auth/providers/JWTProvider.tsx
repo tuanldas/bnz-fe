@@ -1,157 +1,134 @@
-/* eslint-disable no-unused-vars */
-import axios, { AxiosResponse } from 'axios';
-import {
+import axios, { AxiosError } from 'axios';
+import React, {
   createContext,
-  type Dispatch,
-  type PropsWithChildren,
-  type SetStateAction,
-  useEffect,
-  useState
+  Dispatch,
+  PropsWithChildren,
+  SetStateAction,
+  useCallback,
+  useContext,
+  useState,
 } from 'react';
-
-import * as authHelper from '../_helpers';
-import { type AuthModel, type UserModel } from '@/auth';
-
-const API_URL = import.meta.env.VITE_APP_API_URL;
-export const LOGIN_URL = `${API_URL}/login`;
-export const REGISTER_URL = `${API_URL}/register`;
-export const FORGOT_PASSWORD_URL = `${API_URL}/forgot-password`;
-export const RESET_PASSWORD_URL = `${API_URL}/reset-password`;
-export const GET_USER_URL = `${API_URL}/user`;
+import { type UserModel } from '@/auth';
+import { callApiGetClasses } from '@/api/class.tsx';
+import { callApiDoActualRegistration, RegistrationPayload } from '@/api/auth';
 
 interface AuthContextProps {
   loading: boolean;
   setLoading: Dispatch<SetStateAction<boolean>>;
-  auth: AuthModel | undefined;
-  saveAuth: (auth: AuthModel | undefined) => void;
+  isAuthenticated: boolean;
   currentUser: UserModel | undefined;
   setCurrentUser: Dispatch<SetStateAction<UserModel | undefined>>;
-  login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle?: () => Promise<void>;
-  loginWithFacebook?: () => Promise<void>;
-  loginWithGithub?: () => Promise<void>;
-  register: (email: string, password: string, password_confirmation: string) => Promise<void>;
-  requestPasswordResetLink: (email: string) => Promise<void>;
-  changePassword: (
-    email: string,
-    token: string,
-    password: string,
-    password_confirmation: string
-  ) => Promise<void>;
-  getUser: () => Promise<AxiosResponse<any>>;
+  login: (username: string, password: string) => Promise<void>;
+  register: (payload: RegistrationPayload) => Promise<void>;
   logout: () => void;
-  verify: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextProps | null>(null);
+const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 const AuthProvider = ({ children }: PropsWithChildren) => {
-  const [loading, setLoading] = useState(true);
-  const [auth, setAuth] = useState<AuthModel | undefined>(authHelper.getAuth());
+  const [loading, setLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<UserModel | undefined>();
+  const [currentUsernameForDisplay, setCurrentUsernameForDisplay] = useState<string | null>(null);
 
-  const verify = async () => {
-    if (auth) {
+  const checkCredentialsWithApi = useCallback(async (): Promise<boolean> => {
+    if (!axios.defaults.headers.common['Authorization']) {
+      return false;
+    }
+    try {
+      await callApiGetClasses();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }, []);
+
+  const login = useCallback(
+    async (username: string, password: string): Promise<void> => {
+      setLoading(true);
+      axios.defaults.headers.common['Authorization'] = `Basic ${btoa(`${username}:${password}`)}`;
+      setCurrentUsernameForDisplay(username);
+
       try {
-        const { data: user } = await getUser();
-        setCurrentUser(user);
-      } catch {
-        saveAuth(undefined);
+        const credentialsValid = await checkCredentialsWithApi();
+        if (credentialsValid) {
+          setCurrentUser({
+            id: 0,
+            username: username,
+            email: '',
+          } as UserModel);
+          setIsAuthenticated(true);
+        } else {
+          delete axios.defaults.headers.common['Authorization'];
+          setCurrentUsernameForDisplay(null);
+          setCurrentUser(undefined);
+          setIsAuthenticated(false);
+          throw new Error('Tên đăng nhập hoặc mật khẩu không đúng.');
+        }
+      } catch (error) {
+        delete axios.defaults.headers.common['Authorization'];
+        setCurrentUsernameForDisplay(null);
         setCurrentUser(undefined);
+        setIsAuthenticated(false);
+        if (error instanceof Error) throw error;
+        throw new Error('Đăng nhập thất bại do lỗi không xác định.');
+      } finally {
+        setLoading(false);
       }
-    }
-  };
+    },
+    [checkCredentialsWithApi, setLoading]
+  );
 
-  const saveAuth = (auth: AuthModel | undefined) => {
-    setAuth(auth);
-    if (auth) {
-      authHelper.setAuth(auth);
-    } else {
-      authHelper.removeAuth();
-    }
-  };
+  const register = useCallback(
+    async (payload: RegistrationPayload): Promise<void> => {
+      setLoading(true);
+      try {
+        const registrationResponse = await callApiDoActualRegistration(payload);
+        await login(payload.email, payload.password);
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw new Error('Đăng ký hoặc tự động đăng nhập thất bại do lỗi không xác định.');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [login, setLoading]
+  );
 
-  const login = async (email: string, password: string) => {
-    try {
-      const { data: auth } = await axios.post<AuthModel>(LOGIN_URL, {
-        email,
-        password
-      });
-      saveAuth(auth);
-      const { data: user } = await getUser();
-      setCurrentUser(user);
-    } catch (error) {
-      saveAuth(undefined);
-      throw new Error(`Error ${error}`);
-    }
-  };
-
-  const register = async (email: string, password: string, password_confirmation: string) => {
-    try {
-      const { data: auth } = await axios.post(REGISTER_URL, {
-        email,
-        password,
-        password_confirmation
-      });
-      saveAuth(auth);
-      const { data: user } = await getUser();
-      setCurrentUser(user);
-    } catch (error) {
-      saveAuth(undefined);
-      throw new Error(`Error ${error}`);
-    }
-  };
-
-  const requestPasswordResetLink = async (email: string) => {
-    await axios.post(FORGOT_PASSWORD_URL, {
-      email
-    });
-  };
-
-  const changePassword = async (
-    email: string,
-    token: string,
-    password: string,
-    password_confirmation: string
-  ) => {
-    await axios.post(RESET_PASSWORD_URL, {
-      email,
-      token,
-      password,
-      password_confirmation
-    });
-  };
-
-  const getUser = async () => {
-    return await axios.get<UserModel>(GET_USER_URL);
-  };
-
-  const logout = () => {
-    saveAuth(undefined);
+  const logout = useCallback(() => {
+    setCurrentUsernameForDisplay(null);
     setCurrentUser(undefined);
-  };
+    setIsAuthenticated(false);
+    delete axios.defaults.headers.common['Authorization'];
+    setLoading(false);
+  }, [setLoading]);
 
   return (
     <AuthContext.Provider
       value={{
         loading,
         setLoading,
-        auth,
-        saveAuth,
+        isAuthenticated,
         currentUser,
         setCurrentUser,
         login,
         register,
-        requestPasswordResetLink,
-        changePassword,
-        getUser,
         logout,
-        verify
       }}
     >
       {children}
     </AuthContext.Provider>
   );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth phải được sử dụng bên trong một AuthProvider');
+  }
+  return context;
 };
 
 export { AuthContext, AuthProvider };
