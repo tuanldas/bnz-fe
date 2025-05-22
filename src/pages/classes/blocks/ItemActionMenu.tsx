@@ -1,21 +1,25 @@
 import { KeenIcon, MenuIcon, MenuItem, MenuLink, MenuSub, MenuTitle } from '@/components';
 
 type PropsType = {
-  isEdit: boolean,
-  handleEdit: () => void,
-  isDeleteConfirmation: boolean,
-  handleDeleteConfirmation: () => void
-  isViewDetails: boolean,
-  handleViewDetails: () => void
-}
+  isViewDetails?: boolean;
+  handleViewDetails?: () => void;
+  isEdit?: boolean;
+  handleEdit?: () => void;
+  isDeleteConfirmation?: boolean;
+  handleDeleteConfirmation?: () => void;
+  isAssignSubject?: boolean;
+  handleAssignSubject?: () => void;
+};
 
 const ItemActionMenu = ({
+                          isViewDetails,
+                          handleViewDetails,
                           isEdit,
                           handleEdit,
                           isDeleteConfirmation,
                           handleDeleteConfirmation,
-                          isViewDetails,
-                          handleViewDetails
+                          isAssignSubject,
+                          handleAssignSubject,
                         }: PropsType) => {
   return (
     <MenuSub className="menu-default" rootClassName="w-full max-w-[200px]">
@@ -23,37 +27,42 @@ const ItemActionMenu = ({
         <MenuItem onClick={handleViewDetails}>
           <MenuLink>
             <MenuIcon>
-              {/* Chọn một icon phù hợp, ví dụ: 'eye', 'file-magnifying-glass', 'information-outline' */}
               <KeenIcon icon="eye" />
             </MenuIcon>
             <MenuTitle>Xem chi tiết</MenuTitle>
           </MenuLink>
         </MenuItem>
       )}
-      {
-        isEdit
-          ? <MenuItem onClick={() => handleEdit()}>
-            <MenuLink>
-              <MenuIcon>
-                <KeenIcon icon="notepad-edit" />
-              </MenuIcon>
-              <MenuTitle>Sửa</MenuTitle>
-            </MenuLink>
-          </MenuItem>
-          : null
-      }
-      {
-        isDeleteConfirmation
-          ? <MenuItem onClick={() => handleDeleteConfirmation()}>
-            <MenuLink>
-              <MenuIcon>
-                <KeenIcon icon="tablet-delete" />
-              </MenuIcon>
-              <MenuTitle>Xóa</MenuTitle>
-            </MenuLink>
-          </MenuItem>
-          : null
-      }
+      {isEdit && handleEdit && (
+        <MenuItem onClick={handleEdit}>
+          <MenuLink>
+            <MenuIcon>
+              <KeenIcon icon="notepad-edit" />
+            </MenuIcon>
+            <MenuTitle>Sửa</MenuTitle>
+          </MenuLink>
+        </MenuItem>
+      )}
+      {isAssignSubject && handleAssignSubject && (
+        <MenuItem onClick={handleAssignSubject}>
+          <MenuLink>
+            <MenuIcon>
+              <KeenIcon icon="book" />
+            </MenuIcon>
+            <MenuTitle>Thêm môn học</MenuTitle>
+          </MenuLink>
+        </MenuItem>
+      )}
+      {isDeleteConfirmation && handleDeleteConfirmation && (
+        <MenuItem onClick={handleDeleteConfirmation}>
+          <MenuLink>
+            <MenuIcon>
+              <KeenIcon icon="tablet-delete" />
+            </MenuIcon>
+            <MenuTitle>Xóa</MenuTitle>
+          </MenuLink>
+        </MenuItem>
+      )}
     </MenuSub>
   );
 };
