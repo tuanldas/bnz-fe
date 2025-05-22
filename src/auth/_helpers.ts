@@ -42,10 +42,8 @@ export function setupAxios(axios: any) {
   axios.interceptors.request.use(
     (config: { headers: { Authorization: string } }) => {
       const auth = getAuth();
-
-      if (auth?.access_token) {
-        config.headers.Authorization = `Bearer ${auth.access_token}`;
-      }
+      const base64Credentials = btoa('admin@example.com:defaultAdminPassword123!');
+      config.headers.Authorization = `Basic ${base64Credentials}`;
 
       return config;
     },

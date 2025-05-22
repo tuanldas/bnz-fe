@@ -36,7 +36,6 @@ export default class ApiCaller {
     return await axios.get(this.backendUrl + this.endpoint, this.requestOptions).catch((error) => {
       if (error.response.status === 401) {
         localStorage.clear();
-        location.reload();
       }
       return Promise.reject(error);
     });
