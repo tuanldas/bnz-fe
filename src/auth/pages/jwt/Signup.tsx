@@ -5,7 +5,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import * as Yup from 'yup';
 
 import { useAuthContext } from '../../useAuthContext';
-import { toAbsoluteUrl } from '@/utils';
 import { Alert, KeenIcon } from '@/components';
 import { useLayout } from '@/providers';
 
@@ -23,15 +22,14 @@ const signupSchema = Yup.object().shape({
     .max(50, 'Maximum 50 symbols')
     .required('Email is required'),
   password: Yup.string()
-    .min(3, 'Minimum 3 symbols')
+    .min(8, 'Minimum 3 symbols')
     .max(50, 'Maximum 50 symbols')
     .required('Password is required'),
   changepassword: Yup.string()
-    .min(3, 'Minimum 3 symbols')
+    .min(8, 'Minimum 3 symbols')
     .max(50, 'Maximum 50 symbols')
     .required('Password confirmation is required')
-    .oneOf([Yup.ref('password')], "Password and Confirm Password didn't match"),
-  acceptTerms: Yup.bool().required('You must accept the terms and conditions')
+    .oneOf([Yup.ref('password')], 'Password and Confirm Password didn\'t match')
 });
 
 const Signup = () => {
@@ -53,11 +51,10 @@ const Signup = () => {
         if (!register) {
           throw new Error('JWTProvider is required for this form.');
         }
-        await register(values.email, values.password, values.changepassword);
+        await register({ email: values.email, password: values.password });
         navigate(from, { replace: true });
       } catch (error) {
-        console.error(error);
-        setStatus('The sign up details are incorrect');
+        setStatus(error);
         setSubmitting(false);
         setLoading(false);
       }
@@ -82,44 +79,16 @@ const Signup = () => {
         onSubmit={formik.handleSubmit}
       >
         <div className="text-center mb-2.5">
-          <h3 className="text-lg font-semibold text-gray-900 leading-none mb-2.5">Sign up</h3>
+          <h3 className="text-lg font-semibold text-gray-900 leading-none mb-2.5">Đăng ký</h3>
           <div className="flex items-center justify-center font-medium">
-            <span className="text-2sm text-gray-600 me-1.5">Already have an Account ?</span>
+            <span className="text-2sm text-gray-600 me-1.5">Bạn đã có tài khoản ?</span>
             <Link
-              to={currentLayout?.name === 'auth-branded' ? '/auth/login' : '/auth/classic/login'}
+              to={'/auth/login'}
               className="text-2sm link"
             >
-              Sign In
+              Đăng nhập
             </Link>
           </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2.5">
-          <a href="#" className="btn btn-light btn-sm justify-center">
-            <img
-              src={toAbsoluteUrl('/media/brand-logos/google.svg')}
-              className="size-3.5 shrink-0"
-            />
-            Use Google
-          </a>
-
-          <a href="#" className="btn btn-light btn-sm justify-center">
-            <img
-              src={toAbsoluteUrl('/media/brand-logos/apple-black.svg')}
-              className="size-3.5 shrink-0 dark:hidden"
-            />
-            <img
-              src={toAbsoluteUrl('/media/brand-logos/apple-white.svg')}
-              className="size-3.5 shrink-0 light:hidden"
-            />
-            Use Apple
-          </a>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="border-t border-gray-200 w-full"></span>
-          <span className="text-2xs text-gray-500 font-medium uppercase">Or</span>
-          <span className="border-t border-gray-200 w-full"></span>
         </div>
 
         {formik.status && <Alert variant="danger">{formik.status}</Alert>}
@@ -217,32 +186,12 @@ const Signup = () => {
           )}
         </div>
 
-        <label className="checkbox-group">
-          <input
-            className="checkbox checkbox-sm"
-            type="checkbox"
-            {...formik.getFieldProps('acceptTerms')}
-          />
-          <span className="checkbox-label">
-            I accept{' '}
-            <Link to="#" className="text-2sm link">
-              Terms & Conditions
-            </Link>
-          </span>
-        </label>
-
-        {formik.touched.acceptTerms && formik.errors.acceptTerms && (
-          <span role="alert" className="text-danger text-xs mt-1">
-            {formik.errors.acceptTerms}
-          </span>
-        )}
-
         <button
           type="submit"
           className="btn btn-primary flex justify-center grow"
           disabled={loading || formik.isSubmitting}
         >
-          {loading ? 'Please wait...' : 'Sign UP'}
+          {loading ? 'Please wait...' : 'Đăng ký'}
         </button>
       </form>
     </div>

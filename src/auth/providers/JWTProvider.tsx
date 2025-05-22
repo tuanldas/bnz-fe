@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import React, {
   createContext,
   Dispatch,
@@ -6,13 +6,11 @@ import React, {
   SetStateAction,
   useCallback,
   useContext,
-  useState
+  useState,
 } from 'react';
 import { type UserModel } from '@/auth';
 import { callApiGetClasses } from '@/api/class.tsx';
-
-const API_URL = import.meta.env.VITE_APP_API_URL;
-export const GET_USER_URL = `${API_URL}/user`;
+import { callApiDoActualRegistration, RegistrationPayload } from '@/api/auth';
 
 interface AuthContextProps {
   loading: boolean;
@@ -21,6 +19,7 @@ interface AuthContextProps {
   currentUser: UserModel | undefined;
   setCurrentUser: Dispatch<SetStateAction<UserModel | undefined>>;
   login: (username: string, password: string) => Promise<void>;
+  register: (payload: RegistrationPayload) => Promise<void>;
   logout: () => void;
 }
 
@@ -32,47 +31,70 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
   const [currentUser, setCurrentUser] = useState<UserModel | undefined>();
   const [currentUsernameForDisplay, setCurrentUsernameForDisplay] = useState<string | null>(null);
 
-
-  const getUser = useCallback(async () => {
+  const checkCredentialsWithApi = useCallback(async (): Promise<boolean> => {
     if (!axios.defaults.headers.common['Authorization']) {
-      throw new Error('Chưa có thông tin xác thực (Authorization header) để lấy người dùng.');
+      return false;
     }
-    setLoading(true);
     try {
-      const response = await callApiGetClasses();
+      await callApiGetClasses();
       return true;
     } catch (error) {
       return false;
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   const login = useCallback(
-    async (username: string, password: string) => {
+    async (username: string, password: string): Promise<void> => {
       setLoading(true);
-
       axios.defaults.headers.common['Authorization'] = `Basic ${btoa(`${username}:${password}`)}`;
       setCurrentUsernameForDisplay(username);
-      getUser()
-        .then((response) => {
-          if (response) {
-            setCurrentUser({
-              id: 0,
-              email: '',
-              username: username,
-              password: password
-            });
-            setIsAuthenticated(true);
-          } else {
-            delete axios.defaults.headers.common['Authorization'];
-            setCurrentUsernameForDisplay(null);
-            setCurrentUser(undefined);
-            setIsAuthenticated(false);
-          }
-        });
+
+      try {
+        const credentialsValid = await checkCredentialsWithApi();
+        if (credentialsValid) {
+          setCurrentUser({
+            id: 0,
+            username: username,
+            email: '',
+          } as UserModel);
+          setIsAuthenticated(true);
+        } else {
+          delete axios.defaults.headers.common['Authorization'];
+          setCurrentUsernameForDisplay(null);
+          setCurrentUser(undefined);
+          setIsAuthenticated(false);
+          throw new Error('Tên đăng nhập hoặc mật khẩu không đúng.');
+        }
+      } catch (error) {
+        delete axios.defaults.headers.common['Authorization'];
+        setCurrentUsernameForDisplay(null);
+        setCurrentUser(undefined);
+        setIsAuthenticated(false);
+        if (error instanceof Error) throw error;
+        throw new Error('Đăng nhập thất bại do lỗi không xác định.');
+      } finally {
+        setLoading(false);
+      }
     },
-    [getUser]
+    [checkCredentialsWithApi, setLoading]
+  );
+
+  const register = useCallback(
+    async (payload: RegistrationPayload): Promise<void> => {
+      setLoading(true);
+      try {
+        const registrationResponse = await callApiDoActualRegistration(payload);
+        await login(payload.email, payload.password);
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw new Error('Đăng ký hoặc tự động đăng nhập thất bại do lỗi không xác định.');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [login, setLoading]
   );
 
   const logout = useCallback(() => {
@@ -80,8 +102,8 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
     setCurrentUser(undefined);
     setIsAuthenticated(false);
     delete axios.defaults.headers.common['Authorization'];
-  }, []);
-
+    setLoading(false);
+  }, [setLoading]);
 
   return (
     <AuthContext.Provider
@@ -92,7 +114,8 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         currentUser,
         setCurrentUser,
         login,
-        logout
+        register,
+        logout,
       }}
     >
       {children}
