@@ -1,6 +1,5 @@
 import { ReactElement } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
-import { DefaultPage } from '@/pages/dashboards';
 
 import { AuthPage } from '@/auth';
 import { RequireAuth } from '@/auth/RequireAuth';
@@ -16,7 +15,7 @@ const AppRoutingSetup = (): ReactElement => {
     <Routes>
       <Route element={<RequireAuth />}>
         <Route element={<Demo1Layout />}>
-          <Route path="/" element={<DefaultPage />} />
+          <Route path="/" element={<Navigate to="/classes" replace />} />
           <Route path="/classes" element={<Classes />} />
           <Route path="/students" element={<Students />} />
           <Route path="/teachers" element={<Teachers />} />
