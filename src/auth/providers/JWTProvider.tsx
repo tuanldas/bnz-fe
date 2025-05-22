@@ -1,157 +1,111 @@
-/* eslint-disable no-unused-vars */
-import axios, { AxiosResponse } from 'axios';
-import {
+import axios from 'axios';
+import React, {
   createContext,
-  type Dispatch,
-  type PropsWithChildren,
-  type SetStateAction,
-  useEffect,
+  Dispatch,
+  PropsWithChildren,
+  SetStateAction,
+  useCallback,
+  useContext,
   useState
 } from 'react';
-
-import * as authHelper from '../_helpers';
-import { type AuthModel, type UserModel } from '@/auth';
+import { type UserModel } from '@/auth';
+import { callApiGetClasses } from '@/api/class.tsx';
 
 const API_URL = import.meta.env.VITE_APP_API_URL;
-export const LOGIN_URL = `${API_URL}/login`;
-export const REGISTER_URL = `${API_URL}/register`;
-export const FORGOT_PASSWORD_URL = `${API_URL}/forgot-password`;
-export const RESET_PASSWORD_URL = `${API_URL}/reset-password`;
 export const GET_USER_URL = `${API_URL}/user`;
 
 interface AuthContextProps {
   loading: boolean;
   setLoading: Dispatch<SetStateAction<boolean>>;
-  auth: AuthModel | undefined;
-  saveAuth: (auth: AuthModel | undefined) => void;
+  isAuthenticated: boolean;
   currentUser: UserModel | undefined;
   setCurrentUser: Dispatch<SetStateAction<UserModel | undefined>>;
-  login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle?: () => Promise<void>;
-  loginWithFacebook?: () => Promise<void>;
-  loginWithGithub?: () => Promise<void>;
-  register: (email: string, password: string, password_confirmation: string) => Promise<void>;
-  requestPasswordResetLink: (email: string) => Promise<void>;
-  changePassword: (
-    email: string,
-    token: string,
-    password: string,
-    password_confirmation: string
-  ) => Promise<void>;
-  getUser: () => Promise<AxiosResponse<any>>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
-  verify: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextProps | null>(null);
+const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 const AuthProvider = ({ children }: PropsWithChildren) => {
-  const [loading, setLoading] = useState(true);
-  const [auth, setAuth] = useState<AuthModel | undefined>(authHelper.getAuth());
+  const [loading, setLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<UserModel | undefined>();
+  const [currentUsernameForDisplay, setCurrentUsernameForDisplay] = useState<string | null>(null);
 
-  const verify = async () => {
-    if (auth) {
-      try {
-        const { data: user } = await getUser();
-        setCurrentUser(user);
-      } catch {
-        saveAuth(undefined);
-        setCurrentUser(undefined);
-      }
+
+  const getUser = useCallback(async () => {
+    if (!axios.defaults.headers.common['Authorization']) {
+      throw new Error('Chưa có thông tin xác thực (Authorization header) để lấy người dùng.');
     }
-  };
-
-  const saveAuth = (auth: AuthModel | undefined) => {
-    setAuth(auth);
-    if (auth) {
-      authHelper.setAuth(auth);
-    } else {
-      authHelper.removeAuth();
-    }
-  };
-
-  const login = async (email: string, password: string) => {
+    setLoading(true);
     try {
-      const { data: auth } = await axios.post<AuthModel>(LOGIN_URL, {
-        email,
-        password
-      });
-      saveAuth(auth);
-      const { data: user } = await getUser();
-      setCurrentUser(user);
+      const response = await callApiGetClasses();
+      return true;
     } catch (error) {
-      saveAuth(undefined);
-      throw new Error(`Error ${error}`);
+      return false;
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
-  const register = async (email: string, password: string, password_confirmation: string) => {
-    try {
-      const { data: auth } = await axios.post(REGISTER_URL, {
-        email,
-        password,
-        password_confirmation
-      });
-      saveAuth(auth);
-      const { data: user } = await getUser();
-      setCurrentUser(user);
-    } catch (error) {
-      saveAuth(undefined);
-      throw new Error(`Error ${error}`);
-    }
-  };
+  const login = useCallback(
+    async (username: string, password: string) => {
+      setLoading(true);
 
-  const requestPasswordResetLink = async (email: string) => {
-    await axios.post(FORGOT_PASSWORD_URL, {
-      email
-    });
-  };
+      axios.defaults.headers.common['Authorization'] = `Basic ${btoa(`${username}:${password}`)}`;
+      setCurrentUsernameForDisplay(username);
+      getUser()
+        .then((response) => {
+          if (response) {
+            setCurrentUser({
+              id: 0,
+              email: '',
+              username: username,
+              password: password
+            });
+            setIsAuthenticated(true);
+          } else {
+            delete axios.defaults.headers.common['Authorization'];
+            setCurrentUsernameForDisplay(null);
+            setCurrentUser(undefined);
+            setIsAuthenticated(false);
+          }
+        });
+    },
+    [getUser]
+  );
 
-  const changePassword = async (
-    email: string,
-    token: string,
-    password: string,
-    password_confirmation: string
-  ) => {
-    await axios.post(RESET_PASSWORD_URL, {
-      email,
-      token,
-      password,
-      password_confirmation
-    });
-  };
-
-  const getUser = async () => {
-    return await axios.get<UserModel>(GET_USER_URL);
-  };
-
-  const logout = () => {
-    saveAuth(undefined);
+  const logout = useCallback(() => {
+    setCurrentUsernameForDisplay(null);
     setCurrentUser(undefined);
-  };
+    setIsAuthenticated(false);
+    delete axios.defaults.headers.common['Authorization'];
+  }, []);
+
 
   return (
     <AuthContext.Provider
       value={{
         loading,
         setLoading,
-        auth,
-        saveAuth,
+        isAuthenticated,
         currentUser,
         setCurrentUser,
         login,
-        register,
-        requestPasswordResetLink,
-        changePassword,
-        getUser,
-        logout,
-        verify
+        logout
       }}
     >
       {children}
     </AuthContext.Provider>
   );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth phải được sử dụng bên trong một AuthProvider');
+  }
+  return context;
 };
 
 export { AuthContext, AuthProvider };
