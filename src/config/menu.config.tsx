@@ -15,5 +15,10 @@ export const MENU_SIDEBAR: TMenuConfig = [
     title: 'Danh sách học viên',
     icon: 'user-square',
     path: '/students'
+  },
+  {
+    title: 'Danh sách giảng viên',
+    icon: 'user-square',
+    path: '/teachers'
   }
 ];
